@@ -36,7 +36,7 @@ By registering through these referral links, you can support BandwidthHub’s de
 
     ```bash
     wget https://github.com/yucenh/BandwidthHub/archive/refs/heads/main.zip
-    unzip BandwidthHub-main.zip
+    unzip main.zip
     cd BandwidthHub-main/
 2. Create and Configure the `.env` File
     ```bash
