@@ -1,0 +1,47 @@
+services:
+  repocket:
+    image: repocket/repocket
+    environment:
+      - RP_EMAIL=${RP_EMAIL}
+      - RP_API_KEY=${RP_API_KEY}
+    restart: always
+
+  bitping:
+    image: bitping/bitpingd:latest
+    environment:
+      - BITPING_EMAIL=${BITPING_EMAIL}
+      - BITPING_PASSWORD=${BITPING_PASSWORD}
+    volumes:
+      - bitpingd-volume:/root/.bitpingd
+    restart: always
+
+  honeygain:
+    image: honeygain/honeygain
+    command: -tou-accept -email ${HONEYGAIN_EMAIL} -pass ${HONEYGAIN_PASSWORD} -device ${DEVICE_ID}
+    restart: always
+
+  trafficmonetizer:
+    image: ${TRAFFIC_MONETIZER_IMAGE}
+    command: start accept --token ${TRAFFICMONETIZER_TOKEN}
+    restart: always
+
+  pawnsapp:
+    image: iproyal/pawns-cli:latest
+    command: -email=${PAWNSAPP_EMAIL} -password=${PAWNSAPP_PASSWORD} -device-name=${DEVICE_ID} -device-id=${DEVICE_ID} -accept-tos
+    restart: always
+
+  packetstream:
+    image: packetstream/psclient:latest
+    environment:
+      - CID=${PACKETSTREAM_CID}
+    restart: always
+
+  watchtower:
+    image: containrrr/watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --cleanup --include-stopped --include-restarting --revive-stopped --interval 60 psclient
+    restart: always
+
+volumes:
+  bitpingd-volume:
