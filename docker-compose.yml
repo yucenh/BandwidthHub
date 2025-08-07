@@ -6,15 +6,6 @@ services:
       - RP_API_KEY=${RP_API_KEY}
     restart: always
 
-  bitping:
-    image: bitping/bitpingd:latest
-    environment:
-      - BITPING_EMAIL=${BITPING_EMAIL}
-      - BITPING_PASSWORD=${BITPING_PASSWORD}
-    volumes:
-      - bitpingd-volume:/root/.bitpingd
-    restart: always
-
   honeygain:
     image: honeygain/honeygain
     command: -tou-accept -email ${HONEYGAIN_EMAIL} -pass ${HONEYGAIN_PASSWORD} -device ${DEVICE_ID}
