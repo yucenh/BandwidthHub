@@ -1,6 +1,6 @@
 # BandwidthHub
 
-**BandwidthHub** is a comprehensive tool that consolidates multiple traffic-sharing services, enabling you to earn passive income effortlessly by sharing your unused internet bandwidth. With BandwidthHub, you can wrap and manage services like Repocket, Bitping, Honeygain, TrafficMonetizer, PawnsApp, and PacketStream all in one place, maximizing your earnings from every megabyte. It operates seamlessly in the background and keeps everything up to date automatically using Watchtower, allowing you to sit back and watch your earnings grow. It’s OK for older computers, as it requires minimal resources to run.
+**BandwidthHub** is a comprehensive tool that consolidates multiple traffic-sharing services, enabling you to earn passive income effortlessly by sharing your unused internet bandwidth. With BandwidthHub, you can wrap and manage services like Repocket, Honeygain, TrafficMonetizer, PawnsApp, and PacketStream all in one place, maximizing your earnings from every megabyte. It operates seamlessly in the background and keeps everything up to date automatically using Watchtower, allowing you to sit back and watch your earnings grow. It’s OK for older computers, as it requires minimal resources to run.
 
 ## Keywords
 
@@ -9,7 +9,7 @@
 - **Raspberry Pi**: Fully functional on Raspberry Pi devices, making it perfect for DIY tech enthusiasts.
 - **Centralized Management**: Manage all your traffic-sharing services from a single, easy-to-use interface.
 - **Easy Setup**: Register on the supported platforms, configure environment variables, and start earning right away.
-- **Supported Platforms**: Integrates seamlessly with services like Repocket, Bitping, Honeygain, TrafficMonetizer, PawnsApp, and PacketStream.
+- **Supported Platforms**: Integrates seamlessly with services like Repocket, Honeygain, TrafficMonetizer, PawnsApp, and PacketStream.
 
 
 ## Supported Services
@@ -19,7 +19,6 @@ If you don't yet have an account for these platforms, you can register using the
 - **Honeygain** – [Register here using referral link](https://r.honeygain.me/YUCEN59984) | [No referral link](https://honeygain.com)
 - **EarnApp** – [Register here using referral link](https://earnapp.com/i/HwMhGQ7v) | [No referral link](https://earnapp.com)
 - **Repocket** – [Register here using referral link](https://link.repocket.com/6puI) | [No referral link](https://repocket.com/)
-- **Bitping** –  [No referral link](https://bitping.com)
 - **TrafficMonetizer** – [Register here using referral link](https://traffmonetizer.com/?aff=1781613) | [No referral link](https://traffmonetizer.com)
 - **PawnsApp** – [Register here using referral link](https://pawns.app/?r=7782721) | [No referral link](https://pawns.app)
 - **PacketStream** – [Register here using referral link](https://packetstream.io/?psr=6lY3) | [No referral link](https://packetstream.io)
