@@ -41,10 +41,6 @@ if [[ -n "$RP_EMAIL" && -n "$RP_API_KEY" ]]; then
     services_to_start+=("repocket")
 fi
 
-if [[ -n "$BITPING_EMAIL" && -n "$BITPING_PASSWORD" ]]; then
-    services_to_start+=("bitping")
-fi
-
 if [[ -n "$HONEYGAIN_EMAIL" && -n "$HONEYGAIN_PASSWORD" ]]; then
     services_to_start+=("honeygain")
 fi
