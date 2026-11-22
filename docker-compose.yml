@@ -1,38 +1,48 @@
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-watchtower-label: &watchtower-label
+  com.centurylinklabs.watchtower.enable: "true"
+
 services:
   repocket:
-    image: repocket/repocket
+    image: repocket/repocket:latest
     environment:
       - RP_EMAIL=${RP_EMAIL}
       - RP_API_KEY=${RP_API_KEY}
-    restart: always
+    labels: *watchtower-label
+    logging: *default-logging
+    restart: unless-stopped
 
   honeygain:
-    image: honeygain/honeygain
+    image: honeygain/honeygain:latest
     command: -tou-accept -email ${HONEYGAIN_EMAIL} -pass ${HONEYGAIN_PASSWORD} -device ${DEVICE_ID}
-    restart: always
-
-  trafficmonetizer:
-    image: ${TRAFFIC_MONETIZER_IMAGE}
-    command: start accept --token ${TRAFFICMONETIZER_TOKEN}
-    restart: always
+    labels: *watchtower-label
+    logging: *default-logging
+    restart: unless-stopped
 
   pawnsapp:
     image: iproyal/pawns-cli:latest
     command: -email=${PAWNSAPP_EMAIL} -password=${PAWNSAPP_PASSWORD} -device-name=${DEVICE_ID} -device-id=${DEVICE_ID} -accept-tos
-    restart: always
+    labels: *watchtower-label
+    logging: *default-logging
+    restart: unless-stopped
 
   packetstream:
     image: packetstream/psclient:latest
     environment:
       - CID=${PACKETSTREAM_CID}
-    restart: always
+    labels: *watchtower-label
+    logging: *default-logging
+    restart: unless-stopped
 
   watchtower:
-    image: containrrr/watchtower
+    image: nickfedor/watchtower:latest
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-    command: --cleanup --include-stopped --include-restarting --revive-stopped --interval 60 psclient
-    restart: always
-
-volumes:
-  bitpingd-volume:
+    command: --cleanup --label-enable --include-stopped --include-restarting --revive-stopped --interval 86400
+    logging: *default-logging
+    restart: unless-stopped

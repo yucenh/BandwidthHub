@@ -1,74 +1,81 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -euo pipefail
 
-echo "If you don't have an EarnApp account, register here: https://earnapp.com/i/HwMhGQ7v"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
 
-# Wait for the user to press Enter to continue
-read -p "Press Enter to continue with the EarnApp setup..."
+# Optional EarnApp setup (native systemd service, not Docker)
+if command -v earnapp &> /dev/null; then
+    echo "EarnApp is already installed."
+    earnapp status || true
+else
+    echo "If you don't have an EarnApp account, register here: https://earnapp.com/i/HwMhGQ7v"
+    read -r -p "Install and configure EarnApp? [y/N] " install_earnapp
+    if [[ "$install_earnapp" =~ ^[Yy]$ ]]; then
+        wget -qO /tmp/earnapp.sh https://brightdata.com/static/earnapp/install.sh
+        yes yes | sudo bash /tmp/earnapp.sh
+        rm -f /tmp/earnapp.sh
+        read -r -p "Open the link above to register your device, then press Enter to continue..."
+    fi
+fi
 
-wget -qO- https://brightdata.com/static/earnapp/install.sh > /tmp/earnapp.sh && yes yes | sudo bash /tmp/earnapp.sh
-
-read -p "Login above link and press Enter to continue..."
-
-# Check if the required environment files or configs exist
+# Load environment variables
 if [[ -f ".env" ]]; then
     echo "Environment file found, proceeding..."
     set -a
+    # shellcheck disable=SC1091
     source .env
     set +a
 else
-    echo "No environment file found, exiting."
+    echo "No .env file found. Copy .env.sample to .env and fill in your credentials first."
     exit 1
 fi
 
-if [ -z "$DEVICE_ID" ]; then
+if [[ -z "${DEVICE_ID:-}" ]]; then
     if command -v uuidgen &> /dev/null; then
-        DEVICE_ID=$(uuidgen) 
+        DEVICE_ID=$(uuidgen)
+    elif [[ -r /proc/sys/kernel/random/uuid ]]; then
+        DEVICE_ID=$(cat /proc/sys/kernel/random/uuid)
     elif command -v uuid &> /dev/null; then
         DEVICE_ID=$(uuid)
     else
-        echo "No UUID generator found. Please install uuidgen or uuid."
+        echo "No UUID generator found. Please set DEVICE_ID in .env or install uuid-runtime."
         exit 1
     fi
     export DEVICE_ID
 fi
 echo "DEVICE_ID is: $DEVICE_ID"
 
-# Define an array of services and their corresponding config files (if required)
+# Build the list of configured Docker services
 services_to_start=()
 
-# Check each service's configuration and decide whether to bring it up
-if [[ -n "$RP_EMAIL" && -n "$RP_API_KEY" ]]; then
+if [[ -n "${RP_EMAIL:-}" && -n "${RP_API_KEY:-}" ]]; then
     services_to_start+=("repocket")
 fi
 
-if [[ -n "$HONEYGAIN_EMAIL" && -n "$HONEYGAIN_PASSWORD" ]]; then
+if [[ -n "${HONEYGAIN_EMAIL:-}" && -n "${HONEYGAIN_PASSWORD:-}" ]]; then
     services_to_start+=("honeygain")
 fi
 
-if [[ -n "$TRAFFICMONETIZER_TOKEN" ]]; then
-    services_to_start+=("trafficmonetizer")
-    TRAFFIC_MONETIZER_IMAGE="traffmonetizer/cli_v2:latest"
-    if [ "$(uname -m)" = "aarch64" ]; then
-        TRAFFIC_MONETIZER_IMAGE="traffmonetizer/cli_v2:arm64v8"
-    elif [ "$(uname -m)" = "armv7l" ]; then
-        TRAFFIC_MONETIZER_IMAGE="traffmonetizer/cli_v2:arm32v7"
-    fi
-    export TRAFFIC_MONETIZER_IMAGE
-fi
-
-if [[ -n "$PAWNSAPP_EMAIL" && -n "$PAWNSAPP_PASSWORD" ]]; then
+if [[ -n "${PAWNSAPP_EMAIL:-}" && -n "${PAWNSAPP_PASSWORD:-}" ]]; then
     services_to_start+=("pawnsapp")
 fi
 
-if [[ -n "$PACKETSTREAM_CID" ]]; then
+if [[ -n "${PACKETSTREAM_CID:-}" ]]; then
     services_to_start+=("packetstream")
 fi
 
-# Start services if any are valid
-if [ ${#services_to_start[@]} -gt 0 ]; then
-    services_to_start+=("watchtower")
-    echo "Starting services: ${services_to_start[*]}"
-    sudo -E docker compose up -d ${services_to_start[@]}
-else
-    echo "No valid configurations found for any services."
+if [[ ${#services_to_start[@]} -eq 0 ]]; then
+    echo "No valid Docker service configurations found in .env."
+    exit 0
 fi
+
+services_to_start+=("watchtower")
+echo "Starting services: ${services_to_start[*]}"
+
+DOCKER_CMD=(docker)
+if ! docker info &> /dev/null; then
+    DOCKER_CMD=(sudo -E docker)
+fi
+
+"${DOCKER_CMD[@]}" compose up -d --pull always --remove-orphans "${services_to_start[@]}"

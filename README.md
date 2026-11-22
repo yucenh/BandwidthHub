@@ -1,62 +1,93 @@
 # BandwidthHub
 
-**BandwidthHub** is a comprehensive tool that consolidates multiple traffic-sharing services, enabling you to earn passive income effortlessly by sharing your unused internet bandwidth. With BandwidthHub, you can wrap and manage services like Repocket, Honeygain, TrafficMonetizer, PawnsApp, and PacketStream all in one place, maximizing your earnings from every megabyte. It operates seamlessly in the background and keeps everything up to date automatically using Watchtower, allowing you to sit back and watch your earnings grow. It’s OK for older computers, as it requires minimal resources to run.
+**BandwidthHub** is a lightweight Docker Compose setup that consolidates multiple bandwidth-sharing services so you can earn passive income from unused internet bandwidth. It supports Repocket, Honeygain, PawnsApp, PacketStream, and EarnApp, and keeps BandwidthHub containers up to date automatically using Watchtower (`nickfedor/watchtower`). It runs smoothly on both `amd64` and `arm64` devices, including Raspberry Pi.
 
-## Keywords
+## Features
 
-- **Passive Income**: Monetize your idle internet bandwidth with ease across multiple platforms.
-- **Home Sparse Bandwidth Monetization**: Ideal for home networks, BandwidthHub optimizes your internet usage to help you earn more.
-- **Raspberry Pi**: Fully functional on Raspberry Pi devices, making it perfect for DIY tech enthusiasts.
-- **Centralized Management**: Manage all your traffic-sharing services from a single, easy-to-use interface.
-- **Easy Setup**: Register on the supported platforms, configure environment variables, and start earning right away.
-- **Supported Platforms**: Integrates seamlessly with services like Repocket, Honeygain, TrafficMonetizer, PawnsApp, and PacketStream.
-
+- **Passive Income**: Monetize idle home bandwidth across multiple platforms from a single configuration.
+- **ARM64 & x86_64 Ready**: All included Docker images natively support `linux/amd64` and `linux/arm64` (tested on Raspberry Pi).
+- **Scoped Auto-Updates**: Uses `nickfedor/watchtower` with label filtering (`--label-enable`) to update only BandwidthHub containers once a day, leaving other containers untouched.
+- **SD-Card Friendly Logging**: Caps Docker JSON log files (`10m` × 3) to prevent unbounded disk growth.
+- **Simple Setup**: Fill in `.env` for the services you want to use and run `./start_earning.sh`.
 
 ## Supported Services
 
-If you don't yet have an account for these platforms, you can register using the referral links below to support the development and maintenance of BandwidthHub. If you prefer not to use referral links, you can visit the official websites directly.
+If you don't yet have an account on these platforms, you can register using the referral links below to support BandwidthHub, or use the direct links instead.
 
-- **Honeygain** – [Register here using referral link](https://r.honeygain.me/YUCEN59984) | [No referral link](https://honeygain.com)
-- **EarnApp** – [Register here using referral link](https://earnapp.com/i/HwMhGQ7v) | [No referral link](https://earnapp.com)
-- **Repocket** – [Register here using referral link](https://link.repocket.com/6puI) | [No referral link](https://repocket.com/)
-- **TrafficMonetizer** – [Register here using referral link](https://traffmonetizer.com/?aff=1781613) | [No referral link](https://traffmonetizer.com)
-- **PawnsApp** – [Register here using referral link](https://pawns.app/?r=7782721) | [No referral link](https://pawns.app)
-- **PacketStream** – [Register here using referral link](https://packetstream.io/?psr=6lY3) | [No referral link](https://packetstream.io)
-
-By registering through these referral links, you can support BandwidthHub’s development while earning passive income through your shared internet bandwidth. However, if you prefer, you can use the non-referral links to register directly on the official websites.
+- **Honeygain** – [Referral link](https://r.honeygain.me/YUCEN59984) | [Direct link](https://honeygain.com)
+- **EarnApp** – [Referral link](https://earnapp.com/i/HwMhGQ7v) | [Direct link](https://earnapp.com)
+- **Repocket** – [Referral link](https://link.repocket.com/6puI) | [Direct link](https://repocket.com/)
+- **PawnsApp** – [Referral link](https://pawns.app/?r=7782721) | [Direct link](https://pawns.app)
+- **PacketStream** – [Referral link](https://packetstream.io/?psr=6lY3) | [Direct link](https://packetstream.io)
 
 ## Prerequisites
 
-- A Debian-based operating system (e.g., Ubuntu, Debian, Raspberry Pi OS) with a stable network connection. This project has been successfully tested on a Raspberry Pi 4.
+- A Linux system (e.g., Debian, Ubuntu, Raspberry Pi OS) with a stable residential internet connection.
+- `git`, Docker, and the Docker Compose plugin.
 
 ## Getting Started
 
-1. Download this repository: Run the following commands in your terminal:
+1. **Clone this repository**:
 
     ```bash
-    wget https://github.com/yucenh/BandwidthHub/archive/refs/heads/main.zip
-    unzip main.zip
-    cd BandwidthHub-main/
-2. Create and Configure the `.env` File
+    git clone https://github.com/yucenh/BandwidthHub.git
+    cd BandwidthHub
+    ```
+
+2. **Create and configure `.env`** (leave any unused service blank):
+
     ```bash
     cp .env.sample .env
     nano .env
-3. **Update system packages, install dependencies, and start services**: Ensure that Docker and Docker Compose are installed on your system. Execute the following commands:
-    > **Note:** The `install_dependencies.sh` script will trigger a reboot. The following commands take several minutes to complete.
+    ```
+
+3. **Install dependencies (if Docker / Docker Compose is not installed yet)**:
+
     ```bash
-    sudo apt update
-    sudo ./install_dependencies.sh
-    sudo ./start_earning.sh
-4.  **Track Your Earnings**: Earnings may take some time to appear in the dashboards of different platforms. You should be able to see your earnings within a few hours.
+    chmod +x install_dependencies.sh start_earning.sh
+    ./install_dependencies.sh
+    ```
+
+4. **Start earning**:
+
+    ```bash
+    ./start_earning.sh
+    ```
+
+5. **Track your earnings**: Earnings usually appear in each platform's dashboard within a few hours.
+
+## Updating & Managing Services
+
+- **Pull repo updates and latest container images**:
+
+    ```bash
+    git pull
+    ./start_earning.sh
+    ```
+
+- **Check container status / logs**:
+
+    ```bash
+    docker compose ps
+    docker compose logs --tail=50
+    ```
+
+- **Stop and remove all BandwidthHub containers**:
+
+    ```bash
+    docker compose down
+    ```
 
 ## Contributing
-Contributions are welcome! Feel free to submit a pull request or open an issue for any bugs, feature requests, or improvements. Let’s make BandwidthHub the best tool for passive income.
+
+Contributions are welcome! Feel free to submit a pull request or open an issue for bugs, feature requests, or improvements.
 
 ## Disclaimer
-BandwidthHub aggregates several third-party services. Please read and follow the terms and conditions of each platform to avoid any legal or usage issues.
+
+BandwidthHub aggregates third-party services. Please read and follow each platform's terms of service before running them.
 
 ## License
-This project is licensed under the MIT License.
 
+This project is licensed under the MIT License.
 
 ![visitors](https://visitor-badge.laobi.icu/badge?page_id=yucenh.BandwidthHub)
