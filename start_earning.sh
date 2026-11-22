@@ -19,6 +19,19 @@ else
     fi
 fi
 
+# Optional Mysterium Node setup (native systemd service, not Docker)
+if command -v myst &> /dev/null; then
+    echo "Mysterium Node is already installed ($(myst --version 2>/dev/null | awk '/Version:/ {print $2; exit}' || echo 'installed'))."
+else
+    echo "If you don't have a Mysterium Node account, register here: https://mystnodes.co/?referral_code=dHPdeDdN7KlghulnX395RCmWuWCCji13rk4z0Xzi"
+    read -r -p "Install Mysterium Node (native dVPN exit node)? [y/N] " install_myst
+    if [[ "$install_myst" =~ ^[Yy]$ ]]; then
+        sudo -E bash -c "$(curl -fsSL https://raw.githubusercontent.com/mysteriumnetwork/node/master/install.sh)"
+        LAN_IP=$(hostname -I 2>/dev/null | awk '{print $1}')
+        echo "Mysterium Node installed! Claim your node at: http://${LAN_IP:-localhost}:4449"
+    fi
+fi
+
 # Load environment variables
 if [[ -f ".env" ]]; then
     echo "Environment file found, proceeding..."

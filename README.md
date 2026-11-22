@@ -1,6 +1,6 @@
 # BandwidthHub
 
-**BandwidthHub** is a lightweight Docker Compose setup that consolidates multiple bandwidth-sharing services so you can earn passive income from unused internet bandwidth. It supports Repocket, Honeygain, PawnsApp, PacketStream, and EarnApp, and keeps BandwidthHub containers up to date automatically using Watchtower (`nickfedor/watchtower`). It runs smoothly on both `amd64` and `arm64` devices, including Raspberry Pi.
+**BandwidthHub** is a lightweight Docker Compose setup that consolidates multiple bandwidth-sharing services so you can earn passive income from unused internet bandwidth. It supports Repocket, Honeygain, PawnsApp, PacketStream, EarnApp, and Mysterium Node, keeps BandwidthHub containers up to date automatically using Watchtower (`nickfedor/watchtower`), and includes a lightweight local web traffic monitor. It runs smoothly on both `amd64` and `arm64` devices, including Raspberry Pi.
 
 ## Features
 
@@ -16,9 +16,15 @@ If you don't yet have an account on these platforms, you can register using the 
 
 - **Honeygain** – [Referral link](https://r.honeygain.me/YUCEN59984) | [Direct link](https://honeygain.com)
 - **EarnApp** – [Referral link](https://earnapp.com/i/HwMhGQ7v) | [Direct link](https://earnapp.com)
+- **Mysterium Node** *(optional native dVPN node)* – [Referral link](https://mystnodes.co/?referral_code=dHPdeDdN7KlghulnX395RCmWuWCCji13rk4z0Xzi) | [Direct link](https://mystnodes.com)
 - **Repocket** – [Referral link](https://link.repocket.com/6puI) | [Direct link](https://repocket.com/)
 - **PawnsApp** – [Referral link](https://pawns.app/?r=7782721) | [Direct link](https://pawns.app)
 - **PacketStream** – [Referral link](https://packetstream.io/?psr=6lY3) | [Direct link](https://packetstream.io)
+
+## Realistic Earnings Estimate
+
+- **US residential IP (24/7 on a Raspberry Pi 4)**: roughly **~$150–200 / year per IP** combined across the stack (typically led by EarnApp and Mysterium Node, with Honeygain, PawnsApp, Repocket, and PacketStream adding incremental earnings), while a Raspberry Pi 4 draws only ~4–5W of power.
+- **Note**: Actual earnings vary significantly by country/region, demand, uptime, and IP type. Residential home IPs earn the most; datacenter/VPS IPs are usually blocked or earn close to zero. Running multiple devices on the same IP does not multiply earnings, and an **unlimited** internet plan is strongly recommended.
 
 ## Prerequisites
 
@@ -76,6 +82,25 @@ If you don't yet have an account on these platforms, you can register using the 
 
     ```bash
     docker compose down
+    ```
+
+## Optional: Lightweight Traffic Monitor
+
+BandwidthHub includes an optional, zero-dependency Python 3 web dashboard (`monitor/`) and CLI report script (~23 MB RAM) to track per-service traffic, system health, and 24-hour trends in SQLite (with an **EN / 中文** toggle in the UI).
+
+- **Install and start the web dashboard** (runs on port `8088` as a systemd service, and automatically enables kernel `IPAccounting` for EarnApp):
+
+    ```bash
+    chmod +x monitor/install_monitor.sh
+    ./monitor/install_monitor.sh
+    ```
+
+  Then open `http://<your-device-ip>:8088` in your browser.
+
+- **Quick CLI traffic summary**:
+
+    ```bash
+    ./monitor/traffic_report.sh
     ```
 
 ## Contributing

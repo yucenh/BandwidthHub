@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>BandwidthHub · Traffic Monitor</title>
+<style>
+  :root {
+    --bg: #0b0f17;
+    --card: #121826;
+    --card-border: #1f293d;
+    --text: #e6edf7;
+    --muted: #8b9bb4;
+    --accent: #38bdf8;
+    --green: #34d399;
+    --amber: #fbbf24;
+    --red: #f87171;
+    --purple: #a78bfa;
+    --pink: #f472b6;
+    --orange: #fb923c;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    padding: 20px 16px 40px;
+  }
+  .wrap { max-width: 1120px; margin: 0 auto; }
+  header {
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+    gap: 12px; margin-bottom: 20px; padding-bottom: 16px;
+    border-bottom: 1px solid var(--card-border);
+  }
+  .title-block h1 { font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+  .dot {
+    width: 10px; height: 10px; border-radius: 50%; background: var(--green);
+    box-shadow: 0 0 10px var(--green); display: inline-block;
+  }
+  .subtitle { color: var(--muted); font-size: 13px; margin-top: 2px; }
+  .controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .lang-switch {
+    display: inline-flex; background: #141c2c; border: 1px solid var(--card-border);
+    border-radius: 8px; overflow: hidden;
+  }
+  .lang-btn {
+    background: transparent; border: none; border-radius: 0; padding: 6px 10px;
+    font-size: 12px; font-weight: 600; color: var(--muted); cursor: pointer;
+  }
+  .lang-btn.active { background: #24314a; color: var(--text); }
+  .lang-btn:hover:not(.active) { color: var(--text); }
+
+  button {
+    background: #1b2436; color: var(--text); border: 1px solid var(--card-border);
+    padding: 7px 14px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 500;
+    transition: background .15s, border-color .15s;
+  }
+  button:hover { background: #24314a; border-color: #334668; }
+  button.primary { background: #0ea5e9; border-color: #0ea5e9; color: #04131c; font-weight: 600; }
+  button.primary:hover { background: #38bdf8; }
+  .toggle { font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 6px; cursor: pointer; }
+
+  .kpi-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px; margin-bottom: 20px;
+  }
+  .card {
+    background: var(--card); border: 1px solid var(--card-border);
+    border-radius: 12px; padding: 16px 18px;
+  }
+  .kpi-label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  .kpi-value { font-size: 24px; font-weight: 700; margin-top: 6px; font-variant-numeric: tabular-nums; }
+  .kpi-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+  .section-title {
+    font-size: 15px; font-weight: 600; margin-bottom: 12px;
+    display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;
+  }
+  .section-title span.hint { font-size: 12px; color: var(--muted); font-weight: 400; }
+
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  th {
+    text-align: left; color: var(--muted); font-weight: 600; font-size: 12px;
+    padding: 10px 10px; border-bottom: 1px solid var(--card-border); white-space: nowrap;
+  }
+  td {
+    padding: 12px 10px; border-bottom: 1px solid rgba(31,41,61,.65);
+    font-variant-numeric: tabular-nums; white-space: nowrap;
+  }
+  tr:last-child td { border-bottom: none; }
+  .svc-name { font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .swatch { width: 9px; height: 9px; border-radius: 3px; display: inline-block; flex-shrink: 0; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 2px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 600;
+  }
+  .badge.ok { background: rgba(52,211,153,.14); color: var(--green); }
+  .badge.warn { background: rgba(251,191,36,.14); color: var(--amber); }
+  .badge.err { background: rgba(248,113,113,.14); color: var(--red); }
+
+  .charts-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(460px, 1fr));
+    gap: 16px; margin-top: 18px;
+  }
+  @media (max-width: 540px) { .charts-grid { grid-template-columns: 1fr; } }
+
+  .bar-chart { display: flex; align-items: flex-end; gap: 6px; height: 170px; padding-top: 22px; }
+  .bar-col {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    height: 100%; justify-content: flex-end; min-width: 0; position: relative;
+  }
+  .bar-stack {
+    width: 100%; max-width: 34px; display: flex; flex-direction: column-reverse;
+    border-radius: 4px 4px 2px 2px; overflow: hidden; min-height: 2px;
+    background: rgba(139,155,180,.12);
+  }
+  .bar-seg { width: 100%; transition: height .25s ease; }
+  .bar-val {
+    font-size: 10px; color: var(--muted); margin-bottom: 4px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
+  }
+  .bar-lbl { font-size: 10px; color: var(--muted); margin-top: 6px; white-space: nowrap; }
+  .legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; font-size: 12px; color: var(--muted); }
+  .legend-item { display: flex; align-items: center; gap: 5px; }
+
+  .share-list { display: flex; flex-direction: column; gap: 10px; margin-top: 6px; }
+  .share-row { display: flex; flex-direction: column; gap: 4px; }
+  .share-top { display: flex; justify-content: space-between; font-size: 12.5px; }
+  .share-track { width: 100%; height: 8px; background: #1a2336; border-radius: 999px; overflow: hidden; }
+  .share-fill { height: 100%; border-radius: 999px; transition: width .3s ease; }
+
+  .muted { color: var(--muted); }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 12.5px; }
+  .footer { margin-top: 20px; text-align: center; font-size: 12px; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="title-block">
+      <h1><span class="dot" id="liveDot"></span> <span data-i18n="title">BandwidthHub Traffic Monitor</span></h1>
+      <div class="subtitle" id="metaLine">Loading...</div>
+    </div>
+    <div class="controls">
+      <div class="lang-switch" role="group" aria-label="Language">
+        <button class="lang-btn" id="btnEn" type="button">EN</button>
+        <button class="lang-btn" id="btnZh" type="button">中文</button>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" id="autoRefresh" checked />
+        <span data-i18n="autoRefresh">Auto-refresh (30s)</span>
+      </label>
+      <button class="primary" id="refreshBtn" data-i18n="refresh">Refresh</button>
+    </div>
+  </header>
+
+  <section class="kpi-grid">
+    <div class="card">
+      <div class="kpi-label" data-i18n="kpiNicLabel">Host NIC Traffic (Since Boot)</div>
+      <div class="kpi-value" id="kpiNic">--</div>
+      <div class="kpi-sub" id="kpiNicSub">--</div>
+    </div>
+    <div class="card">
+      <div class="kpi-label" data-i18n="kpiTodayLabel">Today's Tracked Traffic</div>
+      <div class="kpi-value" id="kpiToday">--</div>
+      <div class="kpi-sub" id="kpiTodaySub">--</div>
+    </div>
+    <div class="card" id="kpiMystCard">
+      <div class="kpi-label" data-i18n="kpiMystLabel">Mysterium Total Earned</div>
+      <div class="kpi-value" id="kpiMyst">--</div>
+      <div class="kpi-sub" id="kpiMystSub">--</div>
+    </div>
+    <div class="card">
+      <div class="kpi-label" data-i18n="kpiHealthLabel">System Health</div>
+      <div class="kpi-value" id="kpiHealth">--</div>
+      <div class="kpi-sub" id="kpiHealthSub">--</div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="section-title">
+      <span data-i18n="svcTitle">Live Service Traffic</span>
+      <span class="hint" data-i18n="svcHint">Session counters reset on restart; "Today Tracked" is persisted every 5 min in local SQLite</span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th data-i18n="colService">Service</th>
+            <th data-i18n="colStatus">Status</th>
+            <th data-i18n="colSession">Session RX / TX</th>
+            <th data-i18n="colToday">Today Tracked (RX + TX)</th>
+            <th data-i18n="colNotes">Details / Earnings</th>
+          </tr>
+        </thead>
+        <tbody id="svcBody">
+          <tr><td colspan="5" class="muted">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="charts-grid">
+    <div class="card" id="mystChartCard">
+      <div class="section-title">
+        <span data-i18n="myst14Title">Mysterium · Last 14 Days</span>
+        <span class="hint" id="myst14Summary"></span>
+      </div>
+      <div class="bar-chart" id="mystChart"></div>
+      <div class="legend">
+        <div class="legend-item"><span class="swatch" style="background:#38bdf8"></span> <span data-i18n="mystLegend">Daily total traffic (GB) · hover for MYST</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">
+        <span data-i18n="hourlyTitle">Last 24h Traffic by Service</span>
+        <span class="hint" id="hourlyHint">Sampled every 5 min</span>
+      </div>
+      <div class="bar-chart" id="hourlyChart"></div>
+      <div class="legend" id="hourlyLegend"></div>
+    </div>
+  </section>
+
+  <section class="card" style="margin-top:16px">
+    <div class="section-title">
+      <span data-i18n="shareTitle">Current Session Traffic Share</span>
+      <span class="hint" data-i18n="shareHint">Sorted by session RX + TX (Mysterium uses today's UTC total; Watchtower excluded)</span>
+    </div>
+    <div class="share-list" id="shareList"></div>
+  </section>
+
+  <div class="footer" data-i18n="footer">Lightweight local Python 3 monitor · Zero external dependencies</div>
+</div>
+
+<script>
+const I18N = {
+  en: {
+    pageTitle: 'BandwidthHub · Traffic Monitor',
+    title: 'BandwidthHub Traffic Monitor',
+    autoRefresh: 'Auto-refresh (30s)',
+    refresh: 'Refresh',
+    refreshing: 'Refreshing...',
+    kpiNicLabel: 'Host NIC Traffic (Since Boot)',
+    kpiTodayLabel: "Today's Tracked Traffic",
+    kpiMystLabel: 'Mysterium Total Earned',
+    kpiHealthLabel: 'System Health',
+    svcTitle: 'Live Service Traffic',
+    svcHint: 'Session counters reset on restart; "Today Tracked" is persisted every 5 min in local SQLite',
+    colService: 'Service',
+    colStatus: 'Status',
+    colSession: 'Session RX / TX',
+    colToday: 'Today Tracked (RX + TX)',
+    colNotes: 'Details / Earnings',
+    myst14Title: 'Mysterium · Last 14 Days',
+    mystLegend: 'Daily total traffic (GB) · hover for MYST',
+    hourlyTitle: 'Last 24h Traffic by Service',
+    shareTitle: 'Current Session Traffic Share',
+    shareHint: "Sorted by session RX + TX (Mysterium uses today's UTC total; Watchtower excluded)",
+    footer: 'Lightweight local Python 3 monitor · Zero external dependencies',
+    uptimePrefix: 'Uptime',
+    updatedPrefix: 'Updated',
+    relayedNote: 'est. relayed',
+    nicTodayFmt: (nic, svc) => `NIC today RX+TX ${nic} · Services sum ${svc}`,
+    mystSubFmt: (tot, td, tm) => `Lifetime ${tot} · Today ${td} (${tm} MYST)`,
+    healthSubFmt: (mp, mu, dp, ld) => `RAM ${mp}% (${mu}) · Disk ${dp}% · Load ${ld}`,
+    eaAccountingOn: 'systemd IPAccounting',
+    eaAccountingOff: 'IPAccounting disabled',
+    startedAt: 'since',
+    todayUtc: '(today UTC)',
+    mystNoteFmt: (r, t, m, s) => `${r}/${t} services online · Today ${m} MYST (${s} sessions)`,
+    pawnsNoteFmt: (b, t) => `Balance ${b} · Reported total ${t}`,
+    wtNote: 'Auto-updates BandwidthHub containers daily',
+    mystTodayName: 'Mysterium (today)',
+    noMystData: 'No Mysterium history available',
+    mystSumFmt: (gb, m) => `Total ${gb} GB · ${m} MYST`,
+    mystTipFmt: (day, tot, rx, tx, m, s) => `${day}\nTraffic: ${tot} (RX ${rx} / TX ${tx})\nEarned: ${m} MYST (${s} sessions)`,
+    trackingSince: 'Tracking since',
+    waitingSamples: 'Sampler just started — first bar will appear within 5 minutes<br/>(Click "Refresh" to record a sample immediately)',
+    hourTotal: 'total',
+    loadFail: 'Failed to load',
+    daysUnit: 'd',
+    hoursUnit: 'h',
+    minsUnit: 'm',
+    notInstalled: 'Not installed',
+  },
+  zh: {
+    pageTitle: 'BandwidthHub · 流量监控',
+    title: 'BandwidthHub 流量监控',
+    autoRefresh: '每 30 秒自动刷新',
+    refresh: '立即刷新',
+    refreshing: '刷新中...',
+    kpiNicLabel: '整机网卡流量 (自开机)',
+    kpiTodayLabel: '今日追踪流量',
+    kpiMystLabel: 'Mysterium 累计收益',
+    kpiHealthLabel: '系统状态',
+    svcTitle: '各挂机服务实时流量',
+    svcHint: '注：重启后“本次会话”会重置，“今日已追踪”由本地 SQLite 每 5 分钟累计',
+    colService: '服务',
+    colStatus: '状态',
+    colSession: '本次会话 RX / TX',
+    colToday: '今日已追踪 (RX + TX)',
+    colNotes: '备注 / 收益',
+    myst14Title: 'Mysterium 近 14 天流量与收益',
+    mystLegend: '每日总流量 (GB) · 悬停查看 MYST',
+    hourlyTitle: '近 24 小时各服务流量趋势',
+    shareTitle: '当前会话流量占比',
+    shareHint: '按本次会话 RX + TX 排序（Mysterium 按今日统计，不含 Watchtower）',
+    footer: '本地纯 Python 3 轻量监控 · 零外部依赖',
+    uptimePrefix: '已运行',
+    updatedPrefix: '更新于',
+    relayedNote: '约单向中转',
+    nicTodayFmt: (nic, svc) => `网卡今日 RX+TX ${nic} · 各服务合计 ${svc}`,
+    mystSubFmt: (tot, td, tm) => `总流量 ${tot} · 今日 ${td} (${tm} MYST)`,
+    healthSubFmt: (mp, mu, dp, ld) => `内存 ${mp}% (${mu}) · 磁盘 ${dp}% · 负载 ${ld}`,
+    eaAccountingOn: 'systemd 内核级计数',
+    eaAccountingOff: '未开启计数',
+    startedAt: '启动于',
+    todayUtc: '(今日UTC)',
+    mystNoteFmt: (r, t, m, s) => `${r}/${t} 服务在线 · 今日 ${m} MYST (${s} 会话)`,
+    pawnsNoteFmt: (b, t) => `余额 ${b} · 累计 ${t}`,
+    wtNote: '每日自动更新 BandwidthHub 容器',
+    mystTodayName: 'Mysterium (今日)',
+    noMystData: '暂无 Mysterium 历史数据',
+    mystSumFmt: (gb, m) => `合计 ${gb} GB · ${m} MYST`,
+    mystTipFmt: (day, tot, rx, tx, m, s) => `${day}\n流量: ${tot} (RX ${rx} / TX ${tx})\n收益: ${m} MYST (${s} 会话)`,
+    trackingSince: '追踪起始',
+    waitingSamples: '刚刚启动采集，5 分钟后会出现第一根柱子<br/>（点右上角“立即刷新”也可立刻记一次样）',
+    hourTotal: '合计',
+    loadFail: '加载失败',
+    daysUnit: '天',
+    hoursUnit: '小时',
+    minsUnit: '分',
+    notInstalled: '未安装',
+  }
+};
+
+let lang = localStorage.getItem('bh_lang') === 'zh' ? 'zh' : 'en';
+let lastOverview = null;
+let lastHistory = null;
+
+const COLORS = {
+  earnapp:      '#34d399',
+  mysterium:    '#38bdf8',
+  honeygain:    '#fbbf24',
+  repocket:     '#a78bfa',
+  pawnsapp:     '#f472b6',
+  packetstream: '#fb923c',
+  watchtower:   '#64748b',
+};
+
+const NAMES = {
+  earnapp:      'EarnApp',
+  mysterium:    'Mysterium',
+  honeygain:    'Honeygain',
+  repocket:     'Repocket',
+  pawnsapp:     'PawnsApp',
+  packetstream: 'PacketStream',
+};
+
+function t(key) { return I18N[lang][key]; }
+
+function applyStaticLang() {
+  document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
+  document.title = t('pageTitle');
+  document.getElementById('btnEn').classList.toggle('active', lang === 'en');
+  document.getElementById('btnZh').classList.toggle('active', lang === 'zh');
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const k = el.getAttribute('data-i18n');
+    if (I18N[lang][k] && typeof I18N[lang][k] === 'string') {
+      el.textContent = I18N[lang][k];
+    }
+  });
+}
+
+function setLang(next) {
+  lang = next === 'zh' ? 'zh' : 'en';
+  localStorage.setItem('bh_lang', lang);
+  applyStaticLang();
+  if (lastOverview) renderOverview(lastOverview);
+  if (lastHistory) renderHourlyChart(lastHistory);
+}
+
+function fmtBytes(b) {
+  if (b == null || isNaN(b)) return '--';
+  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  let v = Number(b), i = 0;
+  while (v >= 1024 && i < units.length - 1) { v /= 1024; i++; }
+  return i === 0 ? `${Math.round(v)} B` : `${v.toFixed(v >= 100 ? 1 : 2)} ${units[i]}`;
+}
+
+function fmtUptime(sec) {
+  const d = Math.floor(sec / 86400);
+  const h = Math.floor((sec % 86400) / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const parts = [];
+  if (d) parts.push(`${d}${t('daysUnit')}`);
+  if (h) parts.push(`${h}${t('hoursUnit')}`);
+  parts.push(`${m}${t('minsUnit')}`);
+  return parts.join(' ');
+}
+
+function badge(ok, text) {
+  const cls = ok === true ? 'ok' : (ok === 'warn' ? 'warn' : 'err');
+  return `<span class="badge ${cls}">${text}</span>`;
+}
+
+function renderOverview(ov) {
+  const h = ov.host;
+  const ea = ov.earnapp;
+  const my = ov.mysterium;
+  const tracked = ov.today_tracked || {};
+
+  document.getElementById('metaLine').textContent =
+    `${h.hostname} · ${t('uptimePrefix')} ${fmtUptime(h.uptime_sec)} · ${t('updatedPrefix')} ${ov.timestamp}`;
+
+  // KPI 1: Host NIC
+  document.getElementById('kpiNic').textContent = fmtBytes((h.nic_rx + h.nic_tx) / 2);
+  document.getElementById('kpiNicSub').textContent =
+    `${h.iface || 'eth0'}: RX ${fmtBytes(h.nic_rx)} / TX ${fmtBytes(h.nic_tx)} (${t('relayedNote')})`;
+
+  // KPI 2: Today tracked
+  const nicToday = tracked.host_nic ? (tracked.host_nic.rx_bytes + tracked.host_nic.tx_bytes) : 0;
+  const svcTodaySum = Object.entries(tracked)
+    .filter(([k]) => k !== 'host_nic')
+    .reduce((acc, [, v]) => acc + v.rx_bytes + v.tx_bytes, 0);
+  document.getElementById('kpiToday').textContent = fmtBytes(nicToday / 2);
+  document.getElementById('kpiTodaySub').textContent =
+    t('nicTodayFmt')(fmtBytes(nicToday), fmtBytes(svcTodaySum));
+
+  // KPI 3: Mysterium
+  const hasMyst = my && (my.installed || my.status === 'active');
+  document.getElementById('kpiMystCard').style.display = hasMyst ? '' : 'none';
+  document.getElementById('mystChartCard').style.display = hasMyst ? '' : 'none';
+  if (hasMyst) {
+    document.getElementById('kpiMyst').textContent = `${my.total_myst.toFixed(2)} MYST`;
+    document.getElementById('kpiMystSub').textContent =
+      t('mystSubFmt')(fmtBytes(my.total_rx + my.total_tx), fmtBytes(my.today_rx + my.today_tx), my.today_myst.toFixed(3));
+  }
+
+  // KPI 4: Health
+  const memPct = h.mem_total ? Math.round((h.mem_used / h.mem_total) * 100) : 0;
+  const diskPct = h.disk_total ? Math.round((h.disk_used / h.disk_total) * 100) : 0;
+  document.getElementById('kpiHealth').textContent = h.temp_c != null ? `${h.temp_c}°C` : `Load ${h.load_avg[0]}`;
+  document.getElementById('kpiHealthSub').textContent =
+    t('healthSubFmt')(memPct, fmtBytes(h.mem_used), diskPct, h.load_avg[0]);
+
+  const rows = [];
+  const shareItems = [];
+
+  // 1. EarnApp
+  if (ea && (ea.installed || ea.status === 'active')) {
+    const eaToday = tracked.earnapp ? (tracked.earnapp.rx_bytes + tracked.earnapp.tx_bytes) : 0;
+    const sinceClean = (ea.since || '').replace(/^[A-Za-z]+ /, '');
+    rows.push(`
+      <tr>
+        <td><div class="svc-name"><span class="swatch" style="background:${COLORS.earnapp}"></span>EarnApp</div></td>
+        <td>${badge(ea.status === 'active', ea.status)}</td>
+        <td class="mono">${fmtBytes(ea.rx_bytes)} / ${fmtBytes(ea.tx_bytes)}</td>
+        <td class="mono">${fmtBytes(eaToday)}</td>
+        <td class="muted">${ea.ip_accounting ? t('eaAccountingOn') : t('eaAccountingOff')}${sinceClean ? ` · ${t('startedAt')} ${sinceClean}` : ''}</td>
+      </tr>
+    `);
+    shareItems.push({ key: 'earnapp', name: 'EarnApp', bytes: ea.rx_bytes + ea.tx_bytes });
+  }
+
+  // 2. Mysterium
+  if (hasMyst) {
+    const myTodayTotal = my.today_rx + my.today_tx;
+    rows.push(`
+      <tr>
+        <td><div class="svc-name"><span class="swatch" style="background:${COLORS.mysterium}"></span>Mysterium Node</div></td>
+        <td>${badge(my.status === 'active', `${my.status} · v${my.version || '?'}`)}</td>
+        <td class="mono">${fmtBytes(my.today_rx)} / ${fmtBytes(my.today_tx)} <span class="muted">${t('todayUtc')}</span></td>
+        <td class="mono">${fmtBytes(myTodayTotal)}</td>
+        <td class="muted">${t('mystNoteFmt')(my.running_services, my.total_services, my.today_myst.toFixed(4), my.today_sessions)}</td>
+      </tr>
+    `);
+    shareItems.push({ key: 'mysterium', name: t('mystTodayName'), bytes: myTodayTotal });
+  }
+
+  // 3. Docker containers
+  for (const c of ov.containers || []) {
+    const color = COLORS[c.key] || '#94a3b8';
+    const isOk = c.state === 'running';
+    const tRec = tracked[c.key];
+    const tBytes = tRec ? (tRec.rx_bytes + tRec.tx_bytes) : 0;
+    let note = c.image;
+    if (c.key === 'pawnsapp' && c.extra && c.extra.balance) {
+      note = t('pawnsNoteFmt')(c.extra.balance, c.extra.reported_traffic);
+    } else if (c.key === 'watchtower') {
+      note = t('wtNote');
+    }
+    rows.push(`
+      <tr>
+        <td><div class="svc-name"><span class="swatch" style="background:${color}"></span>${c.name}</div></td>
+        <td>${badge(isOk, c.status || c.state)}</td>
+        <td class="mono">${fmtBytes(c.rx_bytes)} / ${fmtBytes(c.tx_bytes)}</td>
+        <td class="mono">${c.key === 'watchtower' ? '--' : fmtBytes(tBytes)}</td>
+        <td class="muted">${note}</td>
+      </tr>
+    `);
+    if (c.key !== 'watchtower') {
+      shareItems.push({ key: c.key, name: c.name, bytes: c.rx_bytes + c.tx_bytes });
+    }
+  }
+  document.getElementById('svcBody').innerHTML = rows.join('');
+
+  // Share bars
+  shareItems.sort((a, b) => b.bytes - a.bytes);
+  const totalShare = shareItems.reduce((a, x) => a + x.bytes, 0) || 1;
+  document.getElementById('shareList').innerHTML = shareItems.map(item => {
+    const pct = (item.bytes / totalShare) * 100;
+    return `
+      <div class="share-row">
+        <div class="share-top">
+          <span>${item.name}</span>
+          <span class="mono">${fmtBytes(item.bytes)} <span class="muted">(${pct.toFixed(1)}%)</span></span>
+        </div>
+        <div class="share-track">
+          <div class="share-fill" style="width:${Math.max(pct, item.bytes > 0 ? 1 : 0)}%;background:${COLORS[item.key] || '#38bdf8'}"></div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  if (hasMyst) renderMystChart(my.daily || []);
+}
+
+function renderMystChart(days) {
+  const el = document.getElementById('mystChart');
+  if (!days.length) {
+    el.innerHTML = `<div class="muted" style="margin:auto">${t('noMystData')}</div>`;
+    return;
+  }
+  const maxB = Math.max(...days.map(d => d.total_bytes), 1);
+  const sumGB = days.reduce((a, d) => a + d.total_bytes, 0) / 1e9;
+  const sumMyst = days.reduce((a, d) => a + d.myst, 0);
+  document.getElementById('myst14Summary').textContent =
+    t('mystSumFmt')(sumGB.toFixed(2), sumMyst.toFixed(2));
+
+  el.innerHTML = days.map(d => {
+    const pct = Math.max((d.total_bytes / maxB) * 100, d.total_bytes > 0 ? 2 : 0);
+    const gb = (d.total_bytes / 1e9);
+    const valTxt = gb >= 1 ? `${gb.toFixed(1)}G` : (gb >= 0.05 ? `${gb.toFixed(2)}G` : '');
+    const lbl = d.day.slice(5);
+    const tip = t('mystTipFmt')(d.day, fmtBytes(d.total_bytes), fmtBytes(d.rx_bytes), fmtBytes(d.tx_bytes), d.myst.toFixed(4), d.sessions);
+    return `
+      <div class="bar-col" title="${tip}">
+        <div class="bar-val">${valTxt}</div>
+        <div class="bar-stack" style="height:100%">
+          <div class="bar-seg" style="height:${pct}%;background:#38bdf8"></div>
+        </div>
+        <div class="bar-lbl">${lbl}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderHourlyChart(hist) {
+  const el = document.getElementById('hourlyChart');
+  const legendEl = document.getElementById('hourlyLegend');
+  const svcKeys = ['earnapp', 'mysterium', 'honeygain', 'repocket', 'pawnsapp', 'packetstream'];
+
+  if (hist.tracking_since) {
+    const dt = new Date(hist.tracking_since * 1000);
+    const locale = lang === 'zh' ? 'zh-CN' : 'en-US';
+    document.getElementById('hourlyHint').textContent =
+      `${t('trackingSince')}: ${dt.toLocaleString(locale, { month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' })}`;
+  }
+
+  const buckets = hist.hourly || [];
+  const totals = buckets.map(b =>
+    svcKeys.reduce((acc, k) => {
+      const s = b.services[k];
+      return acc + (s ? s.rx + s.tx : 0);
+    }, 0)
+  );
+  const maxB = Math.max(...totals, 1);
+
+  if (totals.every(v => v === 0)) {
+    el.innerHTML = `<div class="muted" style="margin:auto;text-align:center;font-size:13px">${t('waitingSamples')}</div>`;
+  } else {
+    el.innerHTML = buckets.map((b, idx) => {
+      const tot = totals[idx];
+      const hLbl = b.hour.slice(11, 13);
+      const showLbl = idx % 3 === 0 || idx === buckets.length - 1;
+      const lines = [`${b.hour} ${t('hourTotal')}: ${fmtBytes(tot)}`];
+      const segs = svcKeys.map(k => {
+        const s = b.services[k];
+        const v = s ? (s.rx + s.tx) : 0;
+        if (v > 0) lines.push(`${NAMES[k]}: ${fmtBytes(v)}`);
+        const pct = (v / maxB) * 100;
+        return v > 0 ? `<div class="bar-seg" style="height:${Math.max(pct, 1.5)}%;background:${COLORS[k]}"></div>` : '';
+      }).join('');
+      return `
+        <div class="bar-col" title="${lines.join('\n')}">
+          <div class="bar-val">${tot > 0 && idx === buckets.length - 1 ? fmtBytes(tot) : ''}</div>
+          <div class="bar-stack" style="height:100%">${segs}</div>
+          <div class="bar-lbl">${showLbl ? hLbl + 'h' : ''}</div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  legendEl.innerHTML = svcKeys.map(k =>
+    `<div class="legend-item"><span class="swatch" style="background:${COLORS[k]}"></span>${NAMES[k]}</div>`
+  ).join('');
+}
+
+async function loadAll(force = false) {
+  const btn = document.getElementById('refreshBtn');
+  btn.disabled = true;
+  btn.textContent = t('refreshing');
+  try {
+    const [ovRes, hiRes] = await Promise.all([
+      fetch(`/api/overview${force ? '?refresh=1' : ''}`),
+      fetch('/api/history?hours=24'),
+    ]);
+    lastOverview = await ovRes.json();
+    lastHistory = await hiRes.json();
+    renderOverview(lastOverview);
+    renderHourlyChart(lastHistory);
+    document.getElementById('liveDot').style.background = '#34d399';
+  } catch (e) {
+    document.getElementById('liveDot').style.background = '#f87171';
+    document.getElementById('metaLine').textContent = `${t('loadFail')}: ${e}`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = t('refresh');
+  }
+}
+
+document.getElementById('btnEn').addEventListener('click', () => setLang('en'));
+document.getElementById('btnZh').addEventListener('click', () => setLang('zh'));
+document.getElementById('refreshBtn').addEventListener('click', () => loadAll(true));
+
+applyStaticLang();
+loadAll(false);
+setInterval(() => {
+  if (document.getElementById('autoRefresh').checked) loadAll(false);
+}, 30000);
+</script>
+</body>
+</html>
